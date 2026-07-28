@@ -35,10 +35,19 @@ db.exec(`
     category TEXT NOT NULL,
     description TEXT NOT NULL DEFAULT '',
     amount REAL NOT NULL,
+    external_id TEXT,
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
   );
   CREATE INDEX IF NOT EXISTS idx_transactions_date ON transactions(date);
 `);
+
+// Idempotent migration: add external_id (sync key for rows pushed from other
+// systems, e.g. Massiv Control Panel) if an older DB doesn't have it yet.
+const txColumns = db.prepare('PRAGMA table_info(transactions)').all();
+if (!txColumns.some((c) => c.name === 'external_id')) {
+  db.exec('ALTER TABLE transactions ADD COLUMN external_id TEXT');
+}
+db.exec('CREATE UNIQUE INDEX IF NOT EXISTS idx_transactions_external_id ON transactions(external_id) WHERE external_id IS NOT NULL');
 
 function fingerprintPassphrase(passphrase) {
   return crypto.createHmac('sha256', SESSION_SECRET).update(passphrase).digest('hex');

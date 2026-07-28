@@ -4,6 +4,7 @@ export const TYPE_LABELS = { income: 'Income', expense: 'Expenses' };
 // Fixed category presets, mirroring how the macros app fixes its meal list.
 // The server accepts any category string, so this list can grow freely.
 export const INCOME_CATEGORIES = [
+  { id: 'massiv', label: 'Massiv' },
   { id: 'salary', label: 'Salary' },
   { id: 'freelance', label: 'Freelance' },
   { id: 'investment', label: 'Investment' },

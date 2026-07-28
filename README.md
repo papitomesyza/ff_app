@@ -51,6 +51,7 @@ npm start       # runs Express, serving dist/ + /api on port 3000
 |---|---|
 | `APP_PASSPHRASE` | The single-user login passphrase. **Authoritative on every boot**: if it differs from the value last synced (tracked via an HMAC fingerprint, keyed with `SESSION_SECRET`, in the settings table), the login hash is updated to match. If you later change the passphrase from Settings, rebooting with the *same* `APP_PASSPHRASE` will not overwrite it — only an actual change to the env var does. Must not be unset or a placeholder (`change-me` / `change-me-flow`) when `NODE_ENV=production`. |
 | `SESSION_SECRET` | Secret used to sign session tokens and to fingerprint `APP_PASSPHRASE`. Set this to a long random string. Must not be unset or the dev default when `NODE_ENV=production`. |
+| `FLOW_SYNC_KEY` | Optional. Shared secret for the machine-to-machine sync API (`/api/sync`), used by Massiv Control Panel to mirror received client payments into Financial Flow as `Massiv` income. Unset = sync endpoints disabled (they return 503); everything else works. Must match `FLOW_SYNC_KEY` on the Massiv service. |
 | `PORT` | Defaults to `3000`. |
 | `DATA_DIR` | Where the SQLite file lives. Defaults to `/app/data` (matches the Zeabur volume mount). |
 | `NODE_ENV` | Set to `production` by the Dockerfile. When set, the server refuses to start if `SESSION_SECRET` or `APP_PASSPHRASE` are still unset or placeholder values — it exits with an error naming the offending variable instead of booting insecurely. |

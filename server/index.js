@@ -10,6 +10,7 @@ import authRoutes from './routes/auth.js';
 import transactionsRoutes from './routes/transactions.js';
 import targetsRoutes from './routes/targets.js';
 import historyRoutes from './routes/history.js';
+import syncRoutes from './routes/sync.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const PORT = process.env.PORT || 3000;
@@ -26,6 +27,9 @@ app.use('/api/auth', authRoutes);
 app.use('/api/transactions', requireAuth, transactionsRoutes);
 app.use('/api/targets', requireAuth, targetsRoutes);
 app.use('/api/history', requireAuth, historyRoutes);
+// Machine-to-machine sync (Massiv Control Panel) — authenticated by its own
+// static key, not the login session.
+app.use('/api/sync', syncRoutes);
 
 const distDir = path.join(__dirname, '..', 'dist');
 app.use(express.static(distDir));
