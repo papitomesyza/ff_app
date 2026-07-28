@@ -2,7 +2,8 @@ import { useEffect, useState, useCallback } from 'react';
 import { X, Copy, Check } from 'lucide-react';
 import { api } from '../api.js';
 import { fullDateLabel, buildDayCopyText, copyToClipboard } from '../history.js';
-import { sumFlows, fmtMoney, categoryLabel } from '../finance.js';
+import { sumFlows, fmtMoney } from '../finance.js';
+import { useCategories, categoryLabel } from '../categories.js';
 import TransactionList from './TransactionList.jsx';
 import EditTransactionModal from './EditTransactionModal.jsx';
 
@@ -11,6 +12,7 @@ export default function DayDetailModal({ date, targets, onClose, onChanged }) {
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(null);
   const [copied, setCopied] = useState(false);
+  const categories = useCategories();
 
   const load = useCallback(async () => {
     const data = await api.getTransactions({ date });
@@ -30,14 +32,14 @@ export default function DayDetailModal({ date, targets, onClose, onChanged }) {
   }
 
   async function handleDelete(tx) {
-    if (!window.confirm(`Remove ${tx.description || categoryLabel(tx.category)}?`)) return;
+    if (!window.confirm(`Remove ${tx.description || categoryLabel(categories, tx.category)}?`)) return;
     await api.deleteTransaction(tx.id);
     await load();
     onChanged?.();
   }
 
   async function handleCopy() {
-    const text = buildDayCopyText({ date, totals: sumFlows(transactions), transactions, currency: targets.currency });
+    const text = buildDayCopyText({ date, totals: sumFlows(transactions), transactions, currency: targets.currency, categories });
     await copyToClipboard(text);
     setCopied(true);
     setTimeout(() => setCopied(false), 1600);

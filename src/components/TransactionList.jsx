@@ -1,7 +1,10 @@
 import { Pencil, Trash2 } from 'lucide-react';
-import { TYPE_ORDER, TYPE_LABELS, categoryLabel, categoryColor, fmtMoney, formatDateLabel } from '../finance.js';
+import { TYPE_ORDER, TYPE_LABELS, fmtMoney, formatDateLabel } from '../finance.js';
+import { useCategories, categoryLabel, categoryColor } from '../categories.js';
 
 export default function TransactionList({ transactions, currency, showDates = false, onEdit, onDelete }) {
+  const categories = useCategories();
+
   if (!transactions.length) {
     return <div className="empty-state">Nothing logged yet. Tap the + button to add your first transaction.</div>;
   }
@@ -27,11 +30,14 @@ export default function TransactionList({ transactions, currency, showDates = fa
             <div className="glass-card">
               {typeTransactions.map((tx) => (
                 <div className="entry-row" key={tx.id}>
-                  <span className="cat-dot" style={{ background: tx.type === 'income' ? 'var(--income)' : categoryColor(tx.category) }} />
+                  <span
+                    className="cat-dot"
+                    style={{ background: categoryColor(categories, tx.category, tx.type === 'income' ? 'var(--income)' : 'var(--expense)') }}
+                  />
                   <div className="entry-info">
-                    <div className="entry-name">{tx.description || categoryLabel(tx.category)}</div>
+                    <div className="entry-name">{tx.description || categoryLabel(categories, tx.category)}</div>
                     <div className="entry-meta">
-                      {categoryLabel(tx.category)}
+                      {categoryLabel(categories, tx.category)}
                       {showDates && ` · ${formatDateLabel(tx.date)}`}
                     </div>
                   </div>

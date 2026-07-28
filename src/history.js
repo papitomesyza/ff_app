@@ -1,4 +1,5 @@
-import { TYPE_ORDER, TYPE_LABELS, categoryLabel, fmtMoney } from './finance.js';
+import { TYPE_ORDER, TYPE_LABELS, fmtMoney } from './finance.js';
+import { categoryLabel } from './categories.js';
 
 // Spending is a ceiling: within budget at or below it, over otherwise.
 // With nothing logged there's nothing to judge — "unknown", not "within".
@@ -58,7 +59,7 @@ function totalsLine(totals, currency) {
 // --- Copy-to-plain-text builders -------------------------------------------
 // Plain, readable text meant for pasting into notes/messages — not CSV/JSON.
 
-export function buildDayCopyText({ date, totals, transactions, currency }) {
+export function buildDayCopyText({ date, totals, transactions, currency, categories }) {
   const lines = [fullDateLabel(date), '', totalsLine(totals, currency)];
 
   const grouped = {};
@@ -73,8 +74,9 @@ export function buildDayCopyText({ date, totals, transactions, currency }) {
     if (!typeTransactions.length) continue;
     lines.push('', TYPE_LABELS[type]);
     for (const t of typeTransactions) {
-      const name = t.description || categoryLabel(t.category);
-      lines.push(`- ${name} (${categoryLabel(t.category)}) — ${fmtMoney(t.amount, currency)}`);
+      const label = categoryLabel(categories, t.category);
+      const name = t.description || label;
+      lines.push(`- ${name} (${label}) — ${fmtMoney(t.amount, currency)}`);
     }
   }
 

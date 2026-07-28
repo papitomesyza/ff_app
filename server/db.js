@@ -39,6 +39,19 @@ db.exec(`
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
   );
   CREATE INDEX IF NOT EXISTS idx_transactions_date ON transactions(date);
+
+  CREATE TABLE IF NOT EXISTS categories (
+    id TEXT PRIMARY KEY,
+    type TEXT NOT NULL CHECK (type IN ('income','expense')),
+    label TEXT NOT NULL,
+    color TEXT NOT NULL DEFAULT '#98989d',
+    sort_order INTEGER NOT NULL DEFAULT 0,
+    -- System categories can be renamed and recolored but never deleted:
+    -- something outside the UI depends on the id existing (e.g. the Massiv
+    -- sync always files its income under 'massiv').
+    is_system INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
 `);
 
 // Idempotent migration: add external_id (sync key for rows pushed from other
@@ -48,6 +61,46 @@ if (!txColumns.some((c) => c.name === 'external_id')) {
   db.exec('ALTER TABLE transactions ADD COLUMN external_id TEXT');
 }
 db.exec('CREATE UNIQUE INDEX IF NOT EXISTS idx_transactions_external_id ON transactions(external_id) WHERE external_id IS NOT NULL');
+
+// Seed the default category set once, on first boot only. After that the list
+// is entirely the user's — deletions and renames are never undone by a reboot.
+const DEFAULT_CATEGORIES = [
+  ['massiv', 'income', 'Massiv', '#00d341', 1],
+  ['salary', 'income', 'Salary', '#00d341', 0],
+  ['freelance', 'income', 'Freelance', '#30d158', 0],
+  ['investment', 'income', 'Investment', '#66d4cf', 0],
+  ['gift', 'income', 'Gift', '#bf5af2', 0],
+  ['other-income', 'income', 'Other', '#98989d', 0],
+  ['housing', 'expense', 'Housing', '#0a84ff', 0],
+  ['food', 'expense', 'Food', '#ff9f0a', 0],
+  ['transport', 'expense', 'Transport', '#64d2ff', 0],
+  ['utilities', 'expense', 'Utilities', '#ffd60a', 0],
+  ['health', 'expense', 'Health', '#ff375f', 0],
+  ['entertainment', 'expense', 'Entertainment', '#bf5af2', 0],
+  ['shopping', 'expense', 'Shopping', '#ff9f0a', 0],
+  ['subscriptions', 'expense', 'Subscriptions', '#66d4cf', 0],
+  ['travel', 'expense', 'Travel', '#30d158', 0],
+  ['other-expense', 'expense', 'Other', '#98989d', 0],
+];
+
+const categoryCount = db.prepare('SELECT COUNT(*) AS n FROM categories').get().n;
+if (categoryCount === 0) {
+  const insert = db.prepare(
+    'INSERT INTO categories (id, type, label, color, sort_order, is_system) VALUES (?, ?, ?, ?, ?, ?)'
+  );
+  DEFAULT_CATEGORIES.forEach(([id, type, label, color, isSystem], i) => {
+    insert.run(id, type, label, color, i, isSystem);
+  });
+}
+
+// The Massiv sync files income under 'massiv' unconditionally, so that row has
+// to exist even on a database seeded before this table did.
+const massivRow = db.prepare("SELECT id FROM categories WHERE id = 'massiv'").get();
+if (!massivRow) {
+  db.prepare(
+    "INSERT INTO categories (id, type, label, color, sort_order, is_system) VALUES ('massiv', 'income', 'Massiv', '#00d341', -1, 1)"
+  ).run();
+}
 
 function fingerprintPassphrase(passphrase) {
   return crypto.createHmac('sha256', SESSION_SECRET).update(passphrase).digest('hex');

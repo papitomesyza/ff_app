@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { X } from 'lucide-react';
-import { categoriesFor } from '../finance.js';
+import { useCategories, categoriesOfType, categoryLabel } from '../categories.js';
 
 const TYPES = [
   { id: 'expense', label: 'Expense' },
@@ -11,7 +11,8 @@ export default function EditTransactionModal({ transaction, onClose, onSave }) {
   const [form, setForm] = useState({ ...transaction });
   const [saving, setSaving] = useState(false);
 
-  const categories = categoriesFor(form.type);
+  const allCategories = useCategories();
+  const categories = categoriesOfType(allCategories, form.type);
 
   function setField(key, value) {
     setForm((f) => ({ ...f, [key]: value }));
@@ -19,7 +20,8 @@ export default function EditTransactionModal({ transaction, onClose, onSave }) {
 
   function switchType(nextType) {
     // Reset the category when crossing income/expense — the old one no longer applies.
-    setForm((f) => ({ ...f, type: nextType, category: categoriesFor(nextType)[0].id }));
+    const next = categoriesOfType(allCategories, nextType);
+    setForm((f) => ({ ...f, type: nextType, category: next[0]?.id || '' }));
   }
 
   async function handleSave() {
@@ -51,8 +53,10 @@ export default function EditTransactionModal({ transaction, onClose, onSave }) {
           <div className="field">
             <label>Category</label>
             <select value={form.category} onChange={(e) => setField('category', e.target.value)}>
+              {/* Keep a category the list no longer offers (deleted, or set by an
+                  integration) selectable so editing can't silently re-file it. */}
               {!categories.some((c) => c.id === form.category) && (
-                <option value={form.category}>{form.category}</option>
+                <option value={form.category}>{categoryLabel(allCategories, form.category)}</option>
               )}
               {categories.map((c) => (
                 <option key={c.id} value={c.id}>{c.label}</option>

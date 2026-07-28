@@ -9,6 +9,7 @@ import { requireAuth } from './auth.js';
 import authRoutes from './routes/auth.js';
 import transactionsRoutes from './routes/transactions.js';
 import targetsRoutes from './routes/targets.js';
+import categoriesRoutes from './routes/categories.js';
 import historyRoutes from './routes/history.js';
 import syncRoutes from './routes/sync.js';
 
@@ -26,6 +27,7 @@ app.use(express.json({ limit: '1mb' }));
 app.use('/api/auth', authRoutes);
 app.use('/api/transactions', requireAuth, transactionsRoutes);
 app.use('/api/targets', requireAuth, targetsRoutes);
+app.use('/api/categories', requireAuth, categoriesRoutes);
 app.use('/api/history', requireAuth, historyRoutes);
 // Machine-to-machine sync (Massiv Control Panel) — authenticated by its own
 // static key, not the login session.

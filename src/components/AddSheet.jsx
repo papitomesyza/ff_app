@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { X } from 'lucide-react';
-import { categoriesFor, todayISO } from '../finance.js';
+import { todayISO } from '../finance.js';
+import { useCategories, categoriesOfType } from '../categories.js';
 
 const TYPES = [
   { id: 'expense', label: 'Expense' },
@@ -16,7 +17,8 @@ export default function AddSheet({ defaultType = 'expense', onClose, onLogged })
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
-  const categories = categoriesFor(type);
+  const allCategories = useCategories();
+  const categories = categoriesOfType(allCategories, type);
   const canSave = category && Number(amount) > 0 && date;
 
   function switchType(nextType) {
@@ -56,17 +58,27 @@ export default function AddSheet({ defaultType = 'expense', onClose, onLogged })
 
           <div className="field">
             <label>Category</label>
-            <div className="chip-row">
-              {categories.map((c) => (
-                <button
-                  key={c.id}
-                  className={`chip ${category === c.id ? 'active' : ''}`}
-                  onClick={() => setCategory(c.id)}
-                >
-                  {c.label}
-                </button>
-              ))}
-            </div>
+            {allCategories === null ? (
+              <div className="spinner" style={{ margin: '8px 0' }} />
+            ) : categories.length === 0 ? (
+              <div className="empty-state" style={{ padding: '12px 0', textAlign: 'left' }}>
+                No {type} categories yet — add one in Settings.
+              </div>
+            ) : (
+              <div className="chip-row">
+                {categories.map((c) => (
+                  <button
+                    key={c.id}
+                    className={`chip ${category === c.id ? 'active' : ''}`}
+                    style={category === c.id ? { color: c.color, borderColor: c.color } : undefined}
+                    onClick={() => setCategory(c.id)}
+                  >
+                    <span className="cat-dot" style={{ background: c.color }} />
+                    {c.label}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
           <div className="field">

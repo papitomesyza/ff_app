@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
-import { LogOut } from 'lucide-react';
+import { LogOut, Plus, Pencil, Trash2, X, Check } from 'lucide-react';
 import { api, setToken } from '../api.js';
+import { useCategories, refreshCategories, categoriesOfType, CATEGORY_PALETTE } from '../categories.js';
 
 const TARGET_FIELDS = [
   ['income_target', 'Monthly income target'],
@@ -64,6 +65,168 @@ function TargetsSection() {
   );
 }
 
+function CategoryForm({ initial, type, onCancel, onSave }) {
+  const [label, setLabel] = useState(initial?.label || '');
+  const [color, setColor] = useState(initial?.color || CATEGORY_PALETTE[0]);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+
+  async function handleSubmit() {
+    setError('');
+    setSaving(true);
+    try {
+      await onSave({ label: label.trim(), color, type });
+    } catch (err) {
+      setError(err.message || 'Could not save category.');
+      setSaving(false);
+    }
+  }
+
+  return (
+    <div className="sheet-backdrop" onClick={onCancel}>
+      <div className="sheet" onClick={(e) => e.stopPropagation()}>
+        <div className="sheet-header">
+          <h2>{initial ? 'Edit category' : `New ${type} category`}</h2>
+          <button className="icon-btn" onClick={onCancel}><X size={20} /></button>
+        </div>
+        <div className="sheet-body">
+          <div className="field">
+            <label>Name</label>
+            <input
+              autoFocus
+              value={label}
+              placeholder={type === 'income' ? 'e.g. Rental income' : 'e.g. Gym'}
+              onChange={(e) => setLabel(e.target.value)}
+            />
+          </div>
+          <div className="field">
+            <label>Color</label>
+            <div className="swatch-row">
+              {CATEGORY_PALETTE.map((c) => (
+                <button
+                  key={c}
+                  className={`swatch ${color === c ? 'active' : ''}`}
+                  style={{ background: c }}
+                  aria-label={`Use color ${c}`}
+                  onClick={() => setColor(c)}
+                >
+                  {color === c && <Check size={14} strokeWidth={3} color="#0c0c0c" />}
+                </button>
+              ))}
+            </div>
+          </div>
+          {error && <div className="error-text" style={{ marginBottom: 10 }}>{error}</div>}
+          <button className="btn btn-primary btn-block" disabled={saving || !label.trim()} onClick={handleSubmit}>
+            {saving ? 'Saving…' : initial ? 'Save changes' : 'Add category'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function CategoryGroup({ type, categories }) {
+  const [editing, setEditing] = useState(null);
+  const [adding, setAdding] = useState(false);
+  const rows = categoriesOfType(categories, type);
+
+  async function handleSave(form) {
+    if (editing) await api.updateCategory(editing.id, form);
+    else await api.addCategory(form);
+    await refreshCategories();
+    setEditing(null);
+    setAdding(false);
+  }
+
+  async function handleDelete(cat) {
+    if (!window.confirm(`Delete "${cat.label}"?`)) return;
+    try {
+      await api.deleteCategory(cat.id);
+    } catch (err) {
+      // In use, or protected by an integration — the server tells us which.
+      if (err.status === 409) {
+        const proceed = window.confirm(
+          `${err.message}.\n\nDelete it anyway? Those transactions keep their amounts and stay in your history.`
+        );
+        if (!proceed) return;
+        try {
+          await api.deleteCategory(cat.id, { force: true });
+        } catch (forceErr) {
+          window.alert(forceErr.message || 'Could not delete this category.');
+          return;
+        }
+      } else {
+        window.alert(err.message || 'Could not delete this category.');
+        return;
+      }
+    }
+    await refreshCategories();
+  }
+
+  return (
+    <div className="glass-card">
+      {rows.length === 0 && (
+        <div className="empty-state" style={{ padding: '12px 0' }}>No {type} categories yet.</div>
+      )}
+      {rows.map((cat) => (
+        <div className="entry-row" key={cat.id}>
+          <span className="cat-dot" style={{ background: cat.color }} />
+          <div className="entry-info">
+            <div className="entry-name">{cat.label}</div>
+            {Boolean(cat.is_system) && <div className="entry-meta">Used by the Massiv sync</div>}
+          </div>
+          <div className="entry-actions">
+            <button className="icon-btn" onClick={() => setEditing(cat)} aria-label={`Edit ${cat.label}`}>
+              <Pencil size={16} />
+            </button>
+            <button
+              className="icon-btn danger"
+              disabled={Boolean(cat.is_system)}
+              style={cat.is_system ? { opacity: 0.3 } : undefined}
+              onClick={() => handleDelete(cat)}
+              aria-label={`Delete ${cat.label}`}
+            >
+              <Trash2 size={16} />
+            </button>
+          </div>
+        </div>
+      ))}
+      <button className="btn btn-ghost btn-block" style={{ marginTop: 10 }} onClick={() => setAdding(true)}>
+        <Plus size={16} /> Add {type} category
+      </button>
+
+      {(adding || editing) && (
+        <CategoryForm
+          initial={editing}
+          type={editing ? editing.type : type}
+          onCancel={() => { setAdding(false); setEditing(null); }}
+          onSave={handleSave}
+        />
+      )}
+    </div>
+  );
+}
+
+function CategoriesSection() {
+  const categories = useCategories();
+
+  if (categories === null) {
+    return (
+      <div className="glass-card">
+        <div className="spinner" style={{ margin: '12px auto' }} />
+      </div>
+    );
+  }
+
+  return (
+    <>
+      <CategoryGroup type="expense" categories={categories} />
+      <div className="list-section-title">Income categories</div>
+      <CategoryGroup type="income" categories={categories} />
+    </>
+  );
+}
+
 function PassphraseSection({ onLoggedOut }) {
   const [current, setCurrent] = useState('');
   const [next, setNext] = useState('');
@@ -121,6 +284,9 @@ export default function Settings({ onLoggedOut }) {
 
       <div className="list-section-title">Monthly targets</div>
       <TargetsSection />
+
+      <div className="list-section-title">Expense categories</div>
+      <CategoriesSection />
 
       <div className="list-section-title">Account</div>
       <PassphraseSection onLoggedOut={onLoggedOut} />

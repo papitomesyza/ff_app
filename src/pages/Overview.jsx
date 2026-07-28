@@ -1,7 +1,8 @@
 import { useEffect, useState, useCallback } from 'react';
 import { Plus, TrendingUp, PieChart } from 'lucide-react';
 import { api } from '../api.js';
-import { sumFlows, expensesByCategory, categoryLabel, categoryColor, fmtMoney, todayISO } from '../finance.js';
+import { sumFlows, expensesByCategory, fmtMoney, todayISO } from '../finance.js';
+import { useCategories, categoryLabel, categoryColor } from '../categories.js';
 import FlowRing from '../components/FlowRing.jsx';
 import ProgressBar from '../components/ProgressBar.jsx';
 import TransactionList from '../components/TransactionList.jsx';
@@ -21,6 +22,7 @@ export default function Overview() {
   const [loading, setLoading] = useState(true);
   const [showAdd, setShowAdd] = useState(false);
   const [editing, setEditing] = useState(null);
+  const categories = useCategories();
   const { from, to } = monthBounds(todayISO());
 
   const load = useCallback(async () => {
@@ -47,7 +49,7 @@ export default function Overview() {
   }
 
   async function handleDelete(tx) {
-    if (!window.confirm(`Remove ${tx.description || categoryLabel(tx.category)}?`)) return;
+    if (!window.confirm(`Remove ${tx.description || categoryLabel(categories, tx.category)}?`)) return;
     await api.deleteTransaction(tx.id);
     await load();
   }
@@ -65,7 +67,7 @@ export default function Overview() {
 
   const totals = sumFlows(transactions);
   const saved = Math.max(totals.net, 0);
-  const categories = expensesByCategory(transactions);
+  const breakdown = expensesByCategory(transactions);
   const currency = targets.currency;
 
   return (
@@ -103,20 +105,20 @@ export default function Overview() {
         />
       </div>
 
-      {categories.length > 0 && (
+      {breakdown.length > 0 && (
         <div className="glass-card">
           <div className="card-header" style={{ color: 'var(--expense)' }}>
             <PieChart size={16} />
             Spending by category
           </div>
-          {categories.map(({ category, amount }) => (
+          {breakdown.map(({ category, amount }) => (
             <ProgressBar
               key={category}
-              label={categoryLabel(category)}
+              label={categoryLabel(categories, category)}
               valueLabel={fmtMoney(amount, currency)}
               targetLabel={totals.expenses > 0 ? `· ${Math.round((amount / totals.expenses) * 100)}%` : ''}
               pct={totals.expenses > 0 ? (amount / totals.expenses) * 100 : 0}
-              color={categoryColor(category)}
+              color={categoryColor(categories, category, 'var(--expense)')}
             />
           ))}
         </div>

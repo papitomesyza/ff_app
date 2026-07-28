@@ -1,59 +1,8 @@
 export const TYPE_ORDER = ['income', 'expense'];
 export const TYPE_LABELS = { income: 'Income', expense: 'Expenses' };
 
-// Fixed category presets, mirroring how the macros app fixes its meal list.
-// The server accepts any category string, so this list can grow freely.
-export const INCOME_CATEGORIES = [
-  { id: 'massiv', label: 'Massiv' },
-  { id: 'salary', label: 'Salary' },
-  { id: 'freelance', label: 'Freelance' },
-  { id: 'investment', label: 'Investment' },
-  { id: 'gift', label: 'Gift' },
-  { id: 'other-income', label: 'Other' },
-];
-
-export const EXPENSE_CATEGORIES = [
-  { id: 'housing', label: 'Housing' },
-  { id: 'food', label: 'Food' },
-  { id: 'transport', label: 'Transport' },
-  { id: 'utilities', label: 'Utilities' },
-  { id: 'health', label: 'Health' },
-  { id: 'entertainment', label: 'Entertainment' },
-  { id: 'shopping', label: 'Shopping' },
-  { id: 'subscriptions', label: 'Subscriptions' },
-  { id: 'travel', label: 'Travel' },
-  { id: 'other-expense', label: 'Other' },
-];
-
-const ALL_CATEGORIES = [...INCOME_CATEGORIES, ...EXPENSE_CATEGORIES];
-
-// Per-category colors from Apple's dark-mode system palette (same family the
-// macros app uses for nutrients).
-export const CATEGORY_COLORS = {
-  housing: '#0a84ff',
-  food: '#ff9f0a',
-  transport: '#64d2ff',
-  utilities: '#ffd60a',
-  health: '#ff375f',
-  entertainment: '#bf5af2',
-  shopping: '#ff9f0a',
-  subscriptions: '#66d4cf',
-  travel: '#30d158',
-  'other-expense': '#98989d',
-};
-
-export function categoriesFor(type) {
-  return type === 'income' ? INCOME_CATEGORIES : EXPENSE_CATEGORIES;
-}
-
-export function categoryLabel(id) {
-  const cat = ALL_CATEGORIES.find((c) => c.id === id);
-  return cat ? cat.label : id;
-}
-
-export function categoryColor(id) {
-  return CATEGORY_COLORS[id] || 'var(--text-dim)';
-}
+// Categories are user-defined and live in the database — see categories.js for
+// the client-side store and the label/color lookups.
 
 export function sumFlows(transactions) {
   let income = 0;

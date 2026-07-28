@@ -53,6 +53,12 @@ export const api = {
   getTargets: () => request('/targets'),
   setTargets: (targets) => request('/targets', { method: 'PUT', body: JSON.stringify(targets) }),
 
+  getCategories: () => request('/categories'),
+  addCategory: (category) => request('/categories', { method: 'POST', body: JSON.stringify(category) }),
+  updateCategory: (id, category) => request(`/categories/${id}`, { method: 'PUT', body: JSON.stringify(category) }),
+  deleteCategory: (id, { force = false } = {}) =>
+    request(`/categories/${id}${force ? '?force=1' : ''}`, { method: 'DELETE' }),
+
   // scope: 'week' | 'month' | 'year'; date is an optional YYYY-MM-DD anchor —
   // omit it to get the current period (computed server-side, Pristina time).
   getHistoryRange: (scope, date) => {

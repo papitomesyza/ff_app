@@ -14,7 +14,15 @@ A focused personal finances tracker. Single user, installable to your phone's ho
 - **Overview** — this month's income vs target and spending vs budget as progress rings, net balance, savings-goal progress, spending broken down by category, and the month's transactions.
 - **Add** — log income or an expense in a few taps: type, category chip, amount, optional description, date (defaults to today).
 - **History** — week / month / year browsing with income and spending charts, a calendar with activity dots, per-day drill-down (tap any day to view/edit/delete its transactions), and copy-to-clipboard summaries.
-- **Settings** — monthly income target, spending budget, savings goal, currency symbol, passphrase change.
+- **Settings** — monthly income target, spending budget, savings goal, currency symbol, custom income/expense categories, passphrase change.
+
+### Categories
+
+Income and expense categories are fully editable from Settings — add your own, rename them, and pick a color from the app's palette. A default set is seeded on first boot; after that the list is yours, and deletions or renames are never undone by a reboot.
+
+Two rules keep your history intact. Renaming a category never detaches its transactions, because transactions store a stable id assigned at creation rather than the display name. And deleting a category never deletes money: if any transactions still use it, the app tells you how many and asks you to confirm — those transactions keep their amounts and stay in your totals, simply displaying the old category name.
+
+The `Massiv` category is marked as a system category: it can be renamed and recolored, but not deleted, because the Massiv Control Panel sync files its income under that id.
 
 ## Local development
 
@@ -68,7 +76,8 @@ Login attempts are rate-limited to 10 per 15 minutes per IP; other `/api` routes
 
 ## Data model notes
 
-- **Transactions** store a frozen snapshot: `date`, `type` (`income` | `expense`), `category`, optional `description`, and `amount`. Category presets live in the client; the server accepts any category string, so the list can evolve without migrations.
+- **Transactions** store a frozen snapshot: `date`, `type` (`income` | `expense`), `category`, optional `description`, and `amount`. The `category` is a stable id, so renaming a category leaves past transactions attached to it.
+- **Categories** are rows in their own table (`id`, `type`, `label`, `color`, `sort_order`, `is_system`), seeded once on first boot. The transactions table holds the id as a plain string rather than a foreign key, so a deleted category can never cascade into deleted money.
 - **Settings** hold the monthly targets (income target, spending budget, savings goal), the currency symbol, and the passphrase hash — a single-row table, seeded on first boot.
 - All aggregation (week/month/year history, daily series) is computed read-only from the transactions table at request time; nothing is denormalized.
 
