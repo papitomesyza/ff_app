@@ -1,0 +1,970 @@
+:root {
+  /* Apple Health dark-mode surfaces: near-black canvas, solid elevated
+     cards (#1C1C1E / #2C2C2E), hairline separators, HIG label opacities. */
+  --bg: #0c0c0c;
+  --accent: #00d341;
+  --accent-dim: #00d34133;
+  --surface: #1c1c1e;
+  --surface-strong: #2c2c2e;
+  --border: rgba(84, 84, 88, 0.5);
+  --text: #ffffff;
+  --text-dim: rgba(235, 235, 245, 0.6);
+  --text-faint: rgba(235, 235, 245, 0.3);
+  --danger: #ff453a;
+  /* Money-flow colors from Apple's dark-mode system palette */
+  --income: #00d341;
+  --expense: #ff453a;
+  --radius-lg: 16px;
+  --radius-md: 12px;
+  --radius-sm: 10px;
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  /* Apple San Francisco system font (SF Pro on Apple platforms) */
+  --font-sf: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display', 'Helvetica Neue', 'Helvetica', 'Arial', sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sf);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+  overscroll-behavior-y: none;
+}
+
+/* Keep SF on recharts SVG labels/ticks, which otherwise fall back to the
+   browser default sans-serif. (Form controls already inherit it below.) */
+svg text {
+  font-family: var(--font-sf);
+}
+
+button,
+input,
+select,
+textarea {
+  font-family: inherit;
+  color: inherit;
+}
+
+button {
+  cursor: pointer;
+  background: none;
+  border: none;
+}
+
+a {
+  color: inherit;
+}
+
+.app-shell {
+  max-width: 560px;
+  margin: 0 auto;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.page {
+  flex: 1;
+  padding: 20px 16px calc(96px + var(--safe-bottom));
+  overflow-y: auto;
+}
+
+.page-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 18px;
+}
+
+/* iOS large-title header with a small-caps date eyebrow above it */
+.page-eyebrow {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 2px;
+}
+
+.page-header h1 {
+  font-size: 34px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+
+.page-header .subtitle {
+  color: var(--text-dim);
+  font-size: 15px;
+  margin-top: 2px;
+}
+
+.glass-card {
+  background: var(--surface);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+}
+
+.glass-card + .glass-card {
+  margin-top: 12px;
+}
+
+/* Health-style card header: small icon + colored label, chevron-ready */
+.card-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 15px;
+  font-weight: 600;
+  margin-bottom: 14px;
+}
+
+/* Bottom nav */
+.bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 560px;
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  padding: 6px 8px calc(8px + var(--safe-bottom));
+  background: rgba(18, 18, 20, 0.82);
+  border-top: 0.5px solid var(--border);
+  backdrop-filter: blur(24px) saturate(1.6);
+  -webkit-backdrop-filter: blur(24px) saturate(1.6);
+  z-index: 40;
+}
+
+.bottom-nav button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 6px 14px;
+  border-radius: var(--radius-sm);
+  color: var(--text-faint);
+  font-size: 10px;
+  font-weight: 500;
+  transition: color 0.15s ease;
+}
+
+.bottom-nav button.active {
+  color: var(--accent);
+}
+
+.fab {
+  position: fixed;
+  bottom: calc(76px + var(--safe-bottom));
+  left: 50%;
+  transform: translateX(-50%);
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #05130a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 8px 24px var(--accent-dim), 0 2px 8px rgba(0, 0, 0, 0.5);
+  z-index: 41;
+}
+
+.fab:active {
+  transform: translateX(-50%) scale(0.95);
+}
+
+/* Rings */
+.rings-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px;
+}
+
+.ring-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.ring-tile .ring-value {
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.ring-tile .ring-label {
+  font-size: 11px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* Secondary bars */
+.bar-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 9px 0;
+}
+
+.bar-row .bar-labels {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: 15px;
+  color: var(--text);
+}
+
+/* Health-style value: bold current figure, quiet target suffix */
+.bar-value {
+  font-weight: 600;
+  font-size: 15px;
+}
+
+.bar-target {
+  font-weight: 400;
+  font-size: 13px;
+  color: var(--text-dim);
+}
+
+.bar-track {
+  height: 6px;
+  border-radius: 4px;
+  background: var(--surface-strong);
+  overflow: hidden;
+}
+
+.bar-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+/* Meal groups */
+.meal-group {
+  margin-top: 16px;
+}
+
+.meal-group-title {
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-dim);
+  margin-bottom: 8px;
+  display: flex;
+  justify-content: space-between;
+}
+
+.entry-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.entry-row:last-child {
+  border-bottom: none;
+}
+
+.entry-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.entry-name {
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.entry-meta {
+  font-size: 12px;
+  color: var(--text-dim);
+}
+
+.entry-cals {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--accent);
+  white-space: nowrap;
+}
+
+.entry-actions {
+  display: flex;
+  gap: 4px;
+}
+
+.icon-btn {
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  color: var(--text-dim);
+}
+
+.icon-btn:active {
+  background: var(--surface-strong);
+}
+
+.icon-btn.danger:active {
+  color: var(--danger);
+}
+
+/* Buttons — iOS filled style: 17pt semibold, continuous 12pt corners */
+.btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px 18px;
+  border-radius: var(--radius-md);
+  font-size: 17px;
+  font-weight: 600;
+}
+
+.btn:active {
+  opacity: 0.75;
+}
+
+.btn-primary {
+  background: var(--accent);
+  color: #05130a;
+}
+
+.btn-primary:disabled {
+  opacity: 0.5;
+}
+
+.btn-ghost {
+  background: var(--surface-strong);
+  color: var(--text);
+}
+
+.btn-block {
+  width: 100%;
+}
+
+.btn-danger {
+  color: var(--danger);
+}
+
+/* Inputs */
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.field label {
+  font-size: 13px;
+  color: var(--text-dim);
+  font-weight: 600;
+}
+
+.field input,
+.field select,
+.field textarea {
+  background: var(--surface-strong);
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  font-size: 17px;
+  outline: none;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.field input:focus,
+.field select:focus,
+.field textarea:focus {
+  border-color: var(--accent);
+}
+
+.field-row {
+  display: flex;
+  gap: 10px;
+}
+
+.field-row .field {
+  flex: 1;
+}
+
+/* Segmented / tabs — UISegmentedControl (dark): translucent gray track,
+   elevated gray thumb with a soft shadow, white text on the selection */
+.segmented {
+  display: flex;
+  background: rgba(118, 118, 128, 0.24);
+  border-radius: 9px;
+  padding: 2px;
+  gap: 2px;
+}
+
+.segmented button {
+  flex: 1;
+  padding: 8px;
+  border-radius: 7px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  transition: background 0.15s ease;
+}
+
+.segmented button.active {
+  background: #636366;
+  color: #fff;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.25), 0 1px 1px rgba(0, 0, 0, 0.15);
+}
+
+/* Sheet / modal */
+.sheet-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 50;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.sheet {
+  width: 100%;
+  max-width: 560px;
+  max-height: 90vh;
+  background: var(--surface);
+  border-radius: 16px 16px 0 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding-bottom: var(--safe-bottom);
+}
+
+/* iOS sheet grabber */
+.sheet::before {
+  content: '';
+  display: block;
+  width: 36px;
+  height: 5px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.22);
+  margin: 8px auto 0;
+  flex-shrink: 0;
+}
+
+.sheet-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 16px 8px;
+}
+
+.sheet-header h2 {
+  font-size: 17px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.sheet-body {
+  overflow-y: auto;
+  padding: 0 16px 20px;
+  flex: 1;
+}
+
+/* One elevation tier up for surfaces nested inside a sheet */
+.sheet .glass-card {
+  background: var(--surface-strong);
+}
+
+.sheet .glass-card .field input,
+.sheet .glass-card .field select,
+.sheet .glass-card .field textarea {
+  background: #3a3a3c;
+}
+
+/* Search result rows */
+.result-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 12px;
+  border-radius: var(--radius-md);
+  background: var(--surface-strong);
+  margin-bottom: 8px;
+}
+
+.result-row:active {
+  opacity: 0.7;
+}
+
+.result-name {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.result-meta {
+  font-size: 12px;
+  color: var(--text-dim);
+  margin-top: 2px;
+}
+
+.provider-badge {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 6px;
+  border-radius: 5px;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  color: var(--text-dim);
+  background: var(--surface-strong);
+  border: 1px solid var(--border);
+  vertical-align: middle;
+}
+
+/* Loading / empty states */
+.empty-state {
+  text-align: center;
+  color: var(--text-dim);
+  padding: 40px 16px;
+  font-size: 14px;
+}
+
+.spinner {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid var(--surface-strong);
+  border-top-color: var(--accent);
+  animation: spin 0.7s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Login screen */
+.login-screen {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  gap: 24px;
+}
+
+.login-logo {
+  font-size: 32px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.login-logo span {
+  color: var(--accent);
+}
+
+.error-text {
+  color: var(--danger);
+  font-size: 13px;
+}
+
+.footer-note {
+  text-align: center;
+  color: var(--text-faint);
+  font-size: 11px;
+  padding: 24px 0 8px;
+}
+
+/* Chart tooltip */
+.chart-tooltip {
+  background: #2c2c2e;
+  border-radius: 10px;
+  padding: 8px 12px;
+  font-size: 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+
+.history-day-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.history-day-row:last-child {
+  border-bottom: none;
+}
+
+.history-day-row:active {
+  opacity: 0.7;
+}
+
+.list-section-title {
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-dim);
+  margin: 20px 0 8px;
+}
+
+.list-section-title:first-child {
+  margin-top: 0;
+}
+
+/* Category chip picker (Add sheet) */
+.chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.chip {
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: var(--surface-strong);
+  border: 1px solid transparent;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-dim);
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+.chip.active {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: var(--accent-dim);
+}
+
+.sheet .chip {
+  background: #3a3a3c;
+}
+
+.sheet .chip.active {
+  background: var(--accent-dim);
+}
+
+/* Overview — net balance row inside the cash-flow card */
+.net-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: 14px 0 4px;
+  border-top: 1px solid var(--border);
+  margin-top: 16px;
+}
+
+.net-value {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+/* Category color dot on transaction rows */
+.cat-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* History — balance carousel (swipe Week / Month / Year) */
+.balance-carousel {
+  margin-bottom: 14px;
+}
+
+.balance-track {
+  display: flex;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.balance-track::-webkit-scrollbar {
+  display: none;
+}
+
+.balance-slide {
+  flex: 0 0 100%;
+  min-width: 0;
+  scroll-snap-align: start;
+}
+
+.balance-dots {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 12px;
+}
+
+.balance-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--text-faint);
+  transition: background 0.2s ease, width 0.2s ease;
+}
+
+.balance-dot.active {
+  width: 18px;
+  border-radius: 3px;
+  background: var(--accent);
+}
+
+.balance-card {
+  min-height: 116px;
+}
+
+.balance-card-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+
+.balance-card-title {
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.balance-metrics {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.balance-metric-label {
+  font-size: 12px;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  font-weight: 600;
+  margin-bottom: 3px;
+}
+
+.balance-metric-status {
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  line-height: 1.15;
+}
+
+.balance-metric-detail {
+  font-size: 13px;
+  color: var(--text-dim);
+  margin-top: 2px;
+}
+
+.balance-logged-days {
+  font-size: 13px;
+  color: var(--text-faint);
+}
+
+/* History — range paging header */
+.range-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 16px 0 10px;
+}
+
+.range-header-label {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.range-nav {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.range-nav button {
+  width: 30px;
+  height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  color: var(--text-dim);
+}
+
+.range-nav button:active {
+  background: var(--surface-strong);
+}
+
+.range-nav button:disabled {
+  opacity: 0.3;
+}
+
+.copy-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--text-dim);
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: var(--surface-strong);
+  border: 1px solid var(--border);
+}
+
+.copy-btn:active {
+  color: var(--accent);
+}
+
+/* History — calendar grid */
+.calendar-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+
+.calendar-weekday {
+  text-align: center;
+  font-size: 10px;
+  color: var(--text-faint);
+  font-weight: 700;
+  padding-bottom: 4px;
+}
+
+.calendar-cell {
+  aspect-ratio: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  font-size: 12px;
+  color: var(--text-dim);
+  position: relative;
+}
+
+.calendar-cell.in-range:active {
+  background: var(--surface-strong);
+}
+
+.calendar-cell.out-of-range {
+  color: var(--text-faint);
+  opacity: 0.35;
+}
+
+/* Today = filled tint circle behind the day number, like the iOS calendar */
+.calendar-cell.today span {
+  background: var(--accent);
+  color: #05130a;
+  font-weight: 700;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.calendar-dot {
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--accent);
+  margin-top: 3px;
+}
+
+/* History — month/year row lists */
+.month-row,
+.year-month-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+  gap: 10px;
+}
+
+.month-row:last-child,
+.year-month-row:last-child {
+  border-bottom: none;
+}
+
+.year-month-row:active {
+  opacity: 0.7;
+}
+
+.year-month-name {
+  font-size: 14px;
+  font-weight: 600;
+  flex: 1;
+}
+
+.year-month-stats {
+  text-align: right;
+}
+
+.year-month-status {
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.year-month-meta {
+  font-size: 11px;
+  color: var(--text-faint);
+}
+
+/* History — balance card net line */
+.balance-net {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+.balance-net-value {
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+/* History — day detail totals */
+.day-totals {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.day-total-value {
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
